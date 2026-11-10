@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: marathon-scraper
+  namespace: default
+spec:
+  schedule: "*/15 * * * *"   # co 15 minut — dostosuj wg potrzeb
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: scraper
+              image: marathon-scraper:latest   # podmień na swój registry, np. registry.example.com/marathon-scraper:latest
+              imagePullPolicy: Always
+              resources:
+                requests:
+                  memory: "512Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "1Gi"
+                  cpu: "500m"
+              volumeMounts:
+                - name: output
+                  mountPath: /app/output
+          volumes:
+            - name: output
+              persistentVolumeClaim:
+                claimName: marathon-scraper-output

@@ -1,0 +1,63 @@
+# Pliki skompilowane i cache Pythona
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Środowiska wirtualne
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Dystrybucja i paczkowanie
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Testy i pokrycie kodu (coverage)
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Logi i lokalne bazy danych
+*.log
+*.pot
+*.mo
+*.sqlite3
+db.sqlite3
+
+# Edytory kodu i IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Systemy operacyjne
+.DS_Store
+Thumbs.db
