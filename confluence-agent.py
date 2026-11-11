@@ -1,7 +1,9 @@
 import os
 import subprocess
 import sys
-from openai import OpenAI
+import asyncio
+from copilot import CopilotClient
+
 
 # Wskazanie na globalny katalog skilla w folderze domowym użytkownika
 CONFLUENCE_SCRIPT = os.path.expanduser(r"~\.agents\skills\confluence\scripts\confluence_api.py")
@@ -23,19 +25,17 @@ def run_confluence_tool(args):
         sys.exit(1)
     return result.stdout
 
+
+async def _call_copilot(prompt):
+    client = CopilotClient()
+    await client.start()
+    session = await client.create_session({"model": "gpt-4o"})
+    response = await session.send_and_wait({"prompt": prompt})
+    await client.stop()
+    return response.data.content
+
 def ask_llm(context_data, user_goal):
-    """Wysyła pobrane dane z Confluence do modelu LLM przez GitHub Models API."""
-    github_token = os.environ.get("GITHUB_TOKEN")
-    if not github_token:
-        print("Błąd: Brak zmiennej środowiskowej GITHUB_TOKEN.")
-        sys.exit(1)
-
-    client = OpenAI(
-        base_url="https://github.ai",
-        api_key=github_token,
-    )
-
-    prompt = f"""Na podstawie poniższych danych pobranych z wewnętrznego Confluence naszej organizacji:
+    prompt = f"""Jesteś analitykiem wiedzy technicznej. Na podstawie poniższych danych z wewnętrznego Confluence:
 1. Podsumuj krótko, jakie dokumenty, projekty lub narzędzia są tam opisane.
 2. Wskaż konkretne sposoby, jak mogę wykorzystać te informacje lub technologie w swojej pracy.
 
@@ -44,16 +44,7 @@ DANE Z CONFLUENCE:
 
 DODATKOWY CEL UŻYTKOWNIKA: {user_goal}
 """
-
-    response = client.chat.completions.create(
-        model="openai/gpt-4o",
-        messages=[
-            {"role": "system", "content": "Jesteś analitykiem wiedzy technicznej. Odpowiadaj wyłącznie na podstawie dostarczonego kontekstu z Confluence."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.3
-    )
-    return response.choices.message.content
+    return asyncio.run(_call_copilot(prompt))
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
