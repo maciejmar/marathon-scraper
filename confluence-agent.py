@@ -1,9 +1,8 @@
+import asyncio
 import os
 import subprocess
 import sys
-import asyncio
 from copilot import CopilotClient
-
 
 # Wskazanie na globalny katalog skilla w folderze domowym użytkownika
 CONFLUENCE_SCRIPT = os.path.expanduser(r"~\.agents\skills\confluence\scripts\confluence_api.py")
@@ -25,17 +24,20 @@ def run_confluence_tool(args):
         sys.exit(1)
     return result.stdout
 
-
 async def _call_copilot(prompt):
+    """Łączy się z lokalnym silnikiem GitHub Copilot SDK i wysyła prompt."""
     client = CopilotClient()
     await client.start()
-    session = await client.create_session({"model": "gpt-4o"})
-    response = await session.send_and_wait({"prompt": prompt})
-    await client.stop()
-    return response.data.content
+    try:
+        session = await client.create_session({"model": "gpt-4o"})
+        response = await session.send_and_wait({"prompt": prompt})
+        return response.data.content
+    finally:
+        await client.stop()
 
 def ask_llm(context_data, user_goal):
-    prompt = f"""Jesteś analitykiem wiedzy technicznej. Na podstawie poniższych danych z wewnętrznego Confluence:
+    """Buduje prompt z danymi z Confluence i uruchamia zapytanie do Copilot SDK."""
+    prompt = f"""Jesteś analitykiem wiedzy technicznej. Na podstawie poniższych danych z wewnętrznego Confluence naszej organizacji:
 1. Podsumuj krótko, jakie dokumenty, projekty lub narzędzia są tam opisane.
 2. Wskaż konkretne sposoby, jak mogę wykorzystać te informacje lub technologie w swojej pracy.
 
@@ -51,7 +53,7 @@ if __name__ == "__main__":
         print('Użycie: python conflu-agent.py "<szukana_fraza_lub_technologia>"')
         sys.exit(1)
 
-    topic = sys.argv
+    topic = sys.argv[1]
     print(f"1. Przeszukuję Confluence dla hasła: '{topic}'...")
     search_output = run_confluence_tool(["search", topic, "--limit", "5"])
     
@@ -61,11 +63,11 @@ if __name__ == "__main__":
 
     print("Znalezione strony:\n" + search_output)
     
-    # Wyciągnięcie ID stron z wyników (format: (SPACE) Tytuł)
+    # Wyciągnięcie ID stron z wyników (format: [123456] (SPACE) Tytuł)
     page_ids = []
     for line in search_output.splitlines():
         if line.startswith("[") and "]" in line:
-            page_ids.append(line.split("]").replace("[", ""))
+            page_ids.append(line.split("]")[0].replace("[", ""))
 
     # Pobranie treści maksymalnie 3 pierwszych stron
     full_context = f"Lista znalezionych stron:\n{search_output}\n\nTreść głównych stron:\n"
